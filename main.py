@@ -140,42 +140,48 @@ class ContentService:
         )
     
     def extract_citations(self, content: str) -> List[Dict[str, Any]]:
-        """Extract citations from content and return structured citation data"""
+        """Extract citations from the References section of the generated content"""
         citations = []
-        lines = content.split('\n')
+        lines = content.splitlines()
         in_references = False
         citation_count = 0
-        
+    
         for line in lines:
             line = line.strip()
-            
-            if line.lower().startswith('## references') or line.lower().startswith('# references'):
+    
+            # Detect references section start (handles "# References", "## References", "**References**")
+            if not in_references and "references" in line.lower():
                 in_references = True
                 continue
-                
-            if in_references and line.startswith('['):
+            
+            # Parse only after references section begins
+            if in_references and line.startswith("["):
                 try:
-                    parts = line.split('|')
+                    # Example format:
+                    # [1] Title | Author | Date | URL
+                    parts = [p.strip() for p in line.split("|")]
                     if len(parts) >= 4:
-                        citation_num = line.split(']')[0] + ']'
-                        title = parts[0].replace(citation_num, '').strip()
-                        author = parts[1].strip() if len(parts) > 1 else "Unknown"
-                        date = parts[2].strip() if len(parts) > 2 else "Unknown"
-                        url = parts[3].strip() if len(parts) > 3 else ""
-                        
+                        citation_count += 1
+                        number = citation_count
+                        title = parts[0].split("]", 1)[-1].strip()  # remove "[1]"
+                        author = parts[1]
+                        date = parts[2]
+                        url = parts[3]
+    
                         citations.append({
-                            "number": citation_count + 1,
+                            "number": number,
                             "title": title,
                             "author": author,
                             "date": date,
                             "url": url,
                             "type": "Web"
                         })
-                        citation_count += 1
                 except Exception as e:
                     logger.warning(f"Failed to parse citation: {line}, Error: {e}")
-                    
+    
         return citations
+
+
 
     async def generate_content(self, request: ContentRequest) -> Dict[str, Any]:
         try:
