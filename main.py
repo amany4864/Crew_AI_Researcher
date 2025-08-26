@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from crewai import Agent, Task, Crew, Process, LLM
 from crewai_tools import SerperDevTool
-
+import re
 import os
 import asyncio
 import logging
@@ -30,6 +30,12 @@ gemini_llm = LLM(
     model="gemini/gemini-1.5-flash",
     api_key=os.getenv("GOOGLE_API_KEY")
 )
+# Initialize Groq LLM
+# groq_llm = LLM(
+#     model="groq/compound-beta",  # or "groq/mixtral-8x7b-   instruct"
+#     api_key=os.getenv("GROQ_API_KEY")
+# )
+
 
 # Initialize tools
 serper_tool = SerperDevTool()
@@ -37,7 +43,7 @@ serper_tool = SerperDevTool()
 class ContentRequest(BaseModel):
     topic: str = Field(..., min_length=3, max_length=200)
     content_type: Optional[str] = Field(default="blog_post")
-    word_count: Optional[int] = Field(default=800, ge=300, le=2000)
+    word_count: Optional[int] = Field(default=800, ge=20, le=2000)
 
 class ContentResponse(BaseModel):
     id: str
@@ -138,22 +144,53 @@ class ContentService:
             6. Proper citation formatting throughout""",
             agent=self.writer
         )
-    
+    import re
+
+    # def extract_citations(self,content: str):
+    #     citations = []
+    #     # Match "[1]" at the start of the line, capture the rest
+    #     pattern = re.compile(r"^\[(\d+)\]\s*(.*)$", re.MULTILINE)
+
+    #     for match in pattern.finditer(content):
+    #         num = int(match.group(1))
+    #         rest = match.group(2).strip()
+
+    #         # Handle placeholder citations
+    #         if rest.lower().startswith("[insert citation here"):
+    #             citations.append({
+    #                 "number": num,
+    #                 "title": rest,
+    #                 "author": None,
+    #                 "date": None,
+    #                 "url": None,
+    #                 "type": "Placeholder"
+    #             })
+    #         else:
+    #             citations.append({
+    #                 "number": num,
+    #                 "title": rest,
+    #                 "author": None,
+    #                 "date": None,
+    #                 "url": None,
+    #                 "type": "Web"
+    #             })
+    #     return citations
+
     def extract_citations(self, content: str) -> List[Dict[str, Any]]:
         """Extract citations from the References section of the generated content"""
         citations = []
         lines = content.splitlines()
         in_references = False
         citation_count = 0
-    
+
         for line in lines:
             line = line.strip()
-    
+
             # Detect references section start (handles "# References", "## References", "**References**")
             if not in_references and "references" in line.lower():
                 in_references = True
                 continue
-            
+
             # Parse only after references section begins
             if in_references and line.startswith("["):
                 try:
@@ -167,7 +204,7 @@ class ContentService:
                         author = parts[1]
                         date = parts[2]
                         url = parts[3]
-    
+
                         citations.append({
                             "number": number,
                             "title": title,
@@ -178,9 +215,25 @@ class ContentService:
                         })
                 except Exception as e:
                     logger.warning(f"Failed to parse citation: {line}, Error: {e}")
-    
+
         return citations
 
+    
+
+    def link_citations(self,content: str, citations: List[Dict[str, Any]]) -> str:
+        """
+        Replace in-text [n] citations with clickable links using the extracted citations list.
+        Example: [1] -> <a href="https://example.com" target="_blank">[1]</a>
+        """
+        def replacer(match):
+            num = int(match.group(1))
+            for c in citations:
+                if c["number"] == num and c.get("url"):
+                    return f'<a href="{c["url"]}" target="_blank">[{num}]</a>'
+            return match.group(0)  # fallback: keep [n] as-is
+
+        # Replace all [n] patterns where n is 1–3 digits
+        return re.sub(r"\[(\d{1,3})\]", replacer, content)
 
 
     async def generate_content(self, request: ContentRequest) -> Dict[str, Any]:
@@ -200,6 +253,7 @@ class ContentService:
             
             content_str = str(result)
             citations = self.extract_citations(content_str)
+            linked_content = self.link_citations(content_str, citations)
             
             return {
                 "content": content_str,
