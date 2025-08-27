@@ -3,3 +3,4 @@ uvicorn[standard]
 litellm
 crewai
 python-dotenv
+crewai_tools
