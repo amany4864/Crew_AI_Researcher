@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from crewai import Agent, Task, Crew, Process, LLM
 from crewai_tools import SerperDevTool
+
+
 import re
 import os
 import asyncio
@@ -20,16 +22,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Validate required environment variables
-required_vars = ["SERPER_API_KEY", "GOOGLE_API_KEY"]
+required_vars = ["SERPER_API_KEY", "GOOGLE_API_KEY","OPENAI_API_KEY"]
 missing_vars = [var for var in required_vars if not os.getenv(var)]
 if missing_vars:
     raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
 
 # Initialize Gemini LLM
-gemini_llm = LLM(
-    model="gemini/gemini-1.5-flash",
-    api_key=os.getenv("GOOGLE_API_KEY")
+
+myllm= LLM(
+    model="gpt-3.5-turbo",
+    api_key=os.getenv("OPENAI_API_KEY")
 )
+# gemini_llm = LLM(
+#     model="gemini-1.5-flash",  
+#     api_key=os.getenv("GOOGLE_API_KEY")
+# )
 # Initialize Groq LLM
 # groq_llm = LLM(
 #     model="groq/compound-beta",  # or "groq/mixtral-8x7b-   instruct"
@@ -63,12 +70,12 @@ class ContentService:
             role='Senior Research Analyst',
             goal='Conduct thorough research using credible web sources',
             backstory="""You are an experienced research analyst who excels at finding 
-            the latest information from web sources, industry news, and reports. 
+            the latest information from web sources, industry news, and reports.      
             You provide comprehensive, evidence-based insights.""",
             verbose=True,
             allow_delegation=False,
             tools=[serper_tool],
-            llm=gemini_llm
+            llm=myllm
         )
         
         # Writer Agent - Creates content based on research
@@ -80,9 +87,8 @@ class ContentService:
             your target audience.""",
             verbose=True,
             allow_delegation=False,
-            llm=gemini_llm
+            llm=myllm
         )
-    
     def create_research_task(self, request: ContentRequest) -> Task:
         return Task(
             description=f"""
@@ -144,7 +150,6 @@ class ContentService:
             6. Proper citation formatting throughout""",
             agent=self.writer
         )
-    import re
 
     # def extract_citations(self,content: str):
     #     citations = []
