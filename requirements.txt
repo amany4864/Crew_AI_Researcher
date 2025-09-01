@@ -1,13 +1,3 @@
-fastapi
-uvicorn[standard]
-litellm
-crewai==0.11.2
-python-dotenv
-crewai_tools==0.0.1
-langchain-openai==0.0.5
-openai==1.10.0
-tiktoken==0.5.2
-
 
 fastapi
 uvicorn
