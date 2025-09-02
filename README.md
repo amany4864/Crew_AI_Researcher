@@ -4,6 +4,9 @@ This project is an AI-powered content generation API built with Python and FastA
 
 **GitHub Repository:** [https://github.com/amany4864/Crew_AI_Researcher](https://github.com/amany4864/Crew_AI_Researcher)
 
+Deployed on :- [https://blaze-ink-psi.vercel.app/](https://blaze-ink-psi.vercel.app/)
+
+
 ## Workflow
 
 1.  **API Request:** A user sends a POST request to the `/generate` endpoint with a JSON payload containing:
