@@ -182,7 +182,8 @@ async def generate_content(
     request: ContentRequest, response: Response, session_id: Optional[str] = Cookie(None)
 ):
     # Create session if not exists
-    if not session_id:
+    # if not session_id:
+    if True:
         session_id = str(uuid.uuid4())
         response.set_cookie(
             key="session_id",
