@@ -165,13 +165,22 @@ content_service = ContentService()
 app = FastAPI(title="AI Content Generator", version="1.0.0")
 
 # CORS
+
+origins = [
+    "https://blaze-ink-psi.vercel.app",  # deployed frontend
+    "http://localhost:5173",             # local dev frontend
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8000 ",             # fallback localhost
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ✅ change in production
-    allow_credentials=True,
+    allow_origins=origins,  # must be specific when using credentials
+    allow_credentials=True, # allow cookies
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 async def root():
