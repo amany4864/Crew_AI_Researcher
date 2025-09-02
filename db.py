@@ -51,6 +51,31 @@ class ContentDB:
         except Exception as e:
             logger.error(f"Save failed: {e}")
 
+    def get_all_content(self) -> List[Dict[str, Any]]:
+        """Get all content from all sessions"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute("""
+                    SELECT id, topic, content, citations, generated_at, metadata
+                    FROM content
+                    ORDER BY created_at DESC
+                """)
+                results = []
+                for row in cursor.fetchall():
+                    results.append({
+                        "id": row[0],
+                        "topic": row[1],
+                        "content": row[2],
+                        "citations": json.loads(row[3]),
+                        "generated_at": datetime.fromisoformat(row[4]),
+                        "metadata": json.loads(row[5])
+                    })
+                return results
+        except Exception as e:
+            logger.error(f"Fetch all content failed: {e}")
+            return []
+
+
     def get_session_content(self, session_id: str) -> List[Dict[str, Any]]:
         """Get all content for a session"""
         try:
