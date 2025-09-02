@@ -167,11 +167,12 @@ app = FastAPI(title="AI Content Generator", version="1.0.0")
 # CORS
 
 origins = [
-    "https://blaze-ink-psi.vercel.app",  # deployed frontend
-    "http://localhost:5173",             # local dev frontend
+    "https://blaze-ink-psi.vercel.app",
+    "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "http://127.0.0.1:8000 ",             # fallback localhost
+    "http://127.0.0.1:8000",  # ⚡ remove space
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
